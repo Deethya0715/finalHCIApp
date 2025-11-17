@@ -370,13 +370,77 @@ const HelpScreen = () => {
     );
 };
 
-const ProfileScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>User Profile</Text>
-    <Text style={styles.subtitle}>Manage your account settings and preferences here.</Text>
-    <StatusBar style="auto" />
-  </View>
-);
+const ProfileScreen = () => {
+  const insets = useSafeAreaInsets();
+  
+  // Helper Component for Settings/Connected Accounts Rows
+  const ProfileRow = ({ title, subtext, icon, onPress }) => (
+    <TouchableOpacity 
+      style={styles.profileRow} 
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {/* Optional: Add icon if needed later, keeping the structure generic for now */}
+      <Text style={styles.profileRowText}>{title}</Text>
+      {/* The image doesn't show a right arrow, but it's a common pattern. I'll omit it to match the image exactly. */}
+    </TouchableOpacity>
+  );
+
+  // Helper Component for Sign Out Button
+  const SignOutButton = ({ onPress }) => (
+    <TouchableOpacity 
+      style={[styles.signOutButton, { marginTop: 20 }]} // Add some space above
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.signOutButtonText}>Sign Out</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.profileContainer, 
+        { paddingTop: insets.top + 10 }
+      ]}
+    >
+      {/* 1. User Header */}
+      <View style={styles.profileHeader}>
+        <Ionicons name="person-circle-outline" size={75} color="#333333" />
+        <Text style={styles.profileName}>Sarah Johnson</Text>
+      </View>
+      
+      {/* 2. Account Settings */}
+      <Text style={styles.profileSectionHeader}>Account Settings</Text>
+      <View style={styles.profileBlock}>
+        <ProfileRow title="Personal Information" onPress={() => console.log('Go to Personal Information')} />
+        <ProfileRow title="Notifications" onPress={() => console.log('Go to Notifications')} />
+        <ProfileRow title="Security & Privacy" onPress={() => console.log('Go to Security & Privacy')} />
+      </View>
+
+      {/* 3. Connected Accounts */}
+      <Text style={styles.profileSectionHeader}>Connected Accounts</Text>
+      <View style={styles.profileBlock}>
+        <ProfileRow title="Chase Bank ********" onPress={() => console.log('Manage Chase')} />
+        <ProfileRow title="Capital One ********" onPress={() => console.log('Manage Capital One')} />
+      </View>
+
+      {/* 4. Support */}
+      <Text style={styles.profileSectionHeader}>Support</Text>
+      <View style={styles.profileBlock}>
+        <ProfileRow title="Help Center" onPress={() => console.log('Go to Help Center')} />
+      </View>
+      
+      {/* 5. Sign Out Button (Styled like the Support row, but stands alone) */}
+      {/* The image shows a full-width button that is visually separate from the Support block */}
+      <SignOutButton onPress={() => console.log('Signing out...')} />
+
+
+      <StatusBar style="auto" />
+    </ScrollView>
+  );
+};
 
 
 // --- Navigators ---
@@ -835,5 +899,69 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, 
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+  },
+
+  // --- PROFILE SCREEN STYLES ---
+  profileContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    backgroundColor: '#F8F5EE', // Soft Beige
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 40, // Space below header
+    marginTop: 10,
+  },
+  profileName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginLeft: 15,
+  },
+  profileSectionHeader: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280', // Slightly muted color for section titles
+    marginBottom: 10,
+    marginTop: 15, // Space above section title
+  },
+  profileBlock: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    shadowColor: '#333333',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
+    overflow: 'hidden', // Ensures the border radius clips the inner rows
+    marginBottom: 10, // Space below the main block
+  },
+  profileRow: {
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0', // Light separator line
+  },
+  profileRowText: {
+    fontSize: 16,
+    color: '#333333',
+    fontWeight: '500',
+  },
+  signOutButton: {
+    backgroundColor: 'white',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#333333',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 3,
+    marginBottom: 20,
+  },
+  signOutButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#CC0000', // Red for emphasis (You can change this)
   },
 });
