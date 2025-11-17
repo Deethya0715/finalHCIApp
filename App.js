@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons'; 
+import { TextInput } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -98,13 +100,157 @@ const HomeScreen = () => {
 };
 
 
-const BudgetScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Budgeting Tools</Text>
-    <Text style={styles.subtitle}>Track your income and set up spending limits here.</Text>
-    <StatusBar style="auto" />
-  </View>
-);
+const BudgetScreen = () => {
+  const insets = useSafeAreaInsets();
+  const [income, setIncome] = useState(4200);
+
+  // Fixed
+  const [rent, setRent] = useState(800);
+  const [transport, setTransport] = useState(150);
+
+  // Variable
+  const [groceries, setGroceries] = useState(800);
+  const [entertainment, setEntertainment] = useState(150);
+
+  // Savings
+  const [savings, setSavings] = useState(800);
+
+  const remaining =
+    income -
+    (rent + transport + groceries + entertainment + savings);
+
+  // Helper component for uniform slider-based expenses
+  const ExpenseSlider = ({ label, value, onValueChange, min, max, step = 10 }) => (
+    <View style={styles.expenseItem}>
+      <View style={styles.expenseHeaderRow}>
+        <Text style={styles.expenseLabel}>{label}</Text>
+        <Text style={styles.expenseValue}>${value}</Text>
+      </View>
+      <Slider
+        minimumValue={min}
+        maximumValue={max}
+        value={value}
+        onValueChange={onValueChange}
+        step={step}
+        minimumTrackTintColor="#89A488"
+        thumbTintColor="#89A488"
+      />
+    </View>
+  );
+
+  return (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.budgetContainerContent, 
+        { paddingTop: insets.top + 10 } // ⬅️ THIS APPLIES THE PADDING
+      ]}
+    >
+      {/* TITLE & SUBTITLE */}
+      <View style={{ marginBottom: 20 }}>
+        <Text style={styles.mainTitle}>Build Your Budget</Text>
+        <Text style={styles.subtitle}>
+          Create a personalized monthly budget based on your income and expenses.
+        </Text>
+      </View>
+
+      {/* INCOME CARD */}
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionHeaderNoMargin}>Monthly Income</Text>
+        <TextInput
+          style={styles.incomeInput}
+          value={String(income)}
+          onChangeText={(text) => {
+            const num = Number(text.replace(/[^0-9]/g, ''));
+            setIncome(isNaN(num) ? 0 : num);
+          }}
+          keyboardType="numeric"
+          placeholder="$0"
+          maxLength={7}
+        />
+      </View>
+
+      {/* FIXED EXPENSES */}
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionHeaderNoMargin}>Fixed Expenses</Text>
+        <ExpenseSlider 
+          label="Rent" 
+          value={rent} 
+          onValueChange={setRent} 
+          min={0} 
+          max={3000} 
+          step={50} 
+        />
+        <ExpenseSlider 
+          label="Transportation" 
+          value={transport} 
+          onValueChange={setTransport} 
+          min={0} 
+          max={500} 
+          step={10} 
+        />
+      </View>
+
+      {/* VARIABLE EXPENSES */}
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionHeaderNoMargin}>Variable Expenses</Text>
+        <ExpenseSlider 
+          label="Groceries" 
+          value={groceries} 
+          onValueChange={setGroceries} 
+          min={0} 
+          max={1500} 
+          step={20} 
+        />
+        <ExpenseSlider 
+          label="Entertainment" 
+          value={entertainment} 
+          onValueChange={setEntertainment} 
+          min={0} 
+          max={500} 
+          step={10} 
+        />
+      </View>
+
+      {/* SAVINGS */}
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionHeaderNoMargin}>Savings</Text>
+        <ExpenseSlider 
+          label="Savings Goal" 
+          value={savings} 
+          onValueChange={setSavings} 
+          min={0} 
+          max={2000} 
+          step={20} 
+        />
+      </View>
+
+      {/* REMAINING */}
+      <View style={styles.budgetCard}>
+        <Text style={styles.sectionHeaderNoMargin}>Remaining</Text>
+        <Text
+          style={[
+            styles.remainingText,
+            { color: remaining >= 0 ? '#89A488' : '#CC0000' },
+          ]}
+        >
+          {remaining >= 0
+            ? `Great! You have money left.`
+            : `Warning! You've overspent.`}
+        </Text>
+        <Text 
+          style={[
+            styles.remainingAmount, 
+            { color: remaining >= 0 ? '#89A488' : '#CC0000' }
+          ]}
+        >
+          ${remaining}
+        </Text>
+      </View>
+      <StatusBar style="auto" />
+    </ScrollView>
+  );
+};
 
 const RoadmapScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -362,6 +508,85 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginTop: 25,
     marginBottom: 15,
+  },
+// --- BUDGET SCREEN STYLES ---
+  incomeInput: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333333',
+    paddingVertical: 5,
+  },
+
+  // sectionHeader: { // Used in Home, Roadmap, Help
+  //   fontSize: 18,
+  //   fontWeight: 'bold',
+  //   color: '#333333',
+  //   marginTop: 25,
+  //   marginBottom: 15,
+  // },
+  sectionHeaderNoMargin: { // New style for card titles
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 15, // Provide spacing below the card title
+  },
+
+  budgetContainerContent: { // Content container for the entire screen
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 40,
+  },
+  budgetCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20, // Space between cards
+    shadowColor: '#333333',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  incomeInput: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333333',
+    paddingVertical: 5,
+    // Removed border for a cleaner look within the card
+  },
+
+  // Expense Items structure for better layout
+  expenseItem: {
+    marginBottom: 15,
+    marginTop: 5,
+  },
+  expenseHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  expenseLabel: {
+    fontSize: 16,
+    color: '#333333',
+    fontWeight: '500',
+  },
+  expenseValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+  },
+
+  // Remaining section
+  remainingText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  remainingAmount: {
+    fontSize: 36,
+    fontWeight: 'bold',
   },
 
   // --- HOME SCREEN STYLES (Refined Spacing) ---
