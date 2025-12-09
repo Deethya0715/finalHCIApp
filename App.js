@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -713,146 +713,159 @@ const HomeScreen = () => {
 // ==== Budget screen ====
 //
 
+const ExpenseSlider = memo(({ label, value, onValueChange, min, max, step = 10 }) => {
+    const [sliderValue, setSliderValue] = useState(value);
+    React.useEffect(() => {
+        setSliderValue(value);
+    }, [value]);
+    
+    const displayedValue = Math.round(sliderValue);
+
+    return (
+        <View style={styles.expenseItem}>
+            <View style={styles.expenseHeaderRow}>
+                <Text style={styles.expenseLabel}>{label}</Text>
+                <Text style={styles.expenseValue}>${displayedValue}</Text>
+            </View>
+            <Slider
+                minimumValue={min}
+                maximumValue={max}
+                value={value}
+                step={step}
+                
+                onValueChange={setSliderValue} 
+                onSlidingComplete={onValueChange} 
+                
+                minimumTrackTintColor="#89A488"
+                thumbTintColor="#89A488"
+            />
+        </View>
+    );
+});
+
+// --- 2. BudgetScreen Component ---
 const BudgetScreen = () => {
-  const insets = useSafeAreaInsets();
-  const [income, setIncome] = useState(4200);
+    const insets = useSafeAreaInsets();
+    const [income, setIncome] = useState(4200);
 
-  const [rent, setRent] = useState(800);
-  const [transport, setTransport] = useState(150);
+    const [rent, setRent] = useState(800);
+    const [transport, setTransport] = useState(150);
 
-  const [groceries, setGroceries] = useState(800);
-  const [entertainment, setEntertainment] = useState(150);
+    const [groceries, setGroceries] = useState(800);
+    const [entertainment, setEntertainment] = useState(150);
 
-  const [savings, setSavings] = useState(800);
+    const [savings, setSavings] = useState(800);
 
-  const remaining =
-    income -
-    (rent + transport + groceries + entertainment + savings);
+    const remaining =
+        income -
+        (rent + transport + groceries + entertainment + savings);
 
-  const ExpenseSlider = ({ label, value, onValueChange, min, max, step = 10 }) => (
-    <View style={styles.expenseItem}>
-      <View style={styles.expenseHeaderRow}>
-        <Text style={styles.expenseLabel}>{label}</Text>
-        <Text style={styles.expenseValue}>${value}</Text>
-      </View>
-      <Slider
-        minimumValue={min}
-        maximumValue={max}
-        value={value}
-        onValueChange={onValueChange}
-        step={step}
-        minimumTrackTintColor="#89A488"
-        thumbTintColor="#89A488"
-      />
-    </View>
-  );
-
-  return (
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={[
-        styles.budgetContainerContent,
-        { paddingTop: insets.top + 10 },
-      ]}
-    >
-      <View style={{ marginBottom: 20 }}>
-        <Text style={styles.mainTitle}>Build Your Budget</Text>
-        <Text style={styles.subtitle}>
-          Create a personalized monthly budget based on your income and expenses.
-        </Text>
-      </View>
-
-      <View style={styles.budgetCard}>
-        <Text style={styles.sectionHeaderNoMargin}>Monthly Income</Text>
-        <TextInput
-          style={styles.incomeInput}
-          value={String(income)}
-          onChangeText={(text) => {
-            const num = Number(text.replace(/[^0-9]/g, ''));
-            setIncome(isNaN(num) ? 0 : num);
-          }}
-          keyboardType="numeric"
-          placeholder="$0"
-          maxLength={7}
-        />
-      </View>
-
-      <View style={styles.budgetCard}>
-        <Text style={styles.sectionHeaderNoMargin}>Fixed Expenses</Text>
-        <ExpenseSlider
-          label="Rent"
-          value={rent}
-          onValueChange={setRent}
-          min={0}
-          max={3000}
-          step={50}
-        />
-        <ExpenseSlider
-          label="Transportation"
-          value={transport}
-          onValueChange={setTransport}
-          min={0}
-          max={500}
-          step={10}
-        />
-      </View>
-
-      <View style={styles.budgetCard}>
-        <Text style={styles.sectionHeaderNoMargin}>Variable Expenses</Text>
-        <ExpenseSlider
-          label="Groceries"
-          value={groceries}
-          onValueChange={setGroceries}
-          min={0}
-          max={1500}
-          step={20}
-        />
-        <ExpenseSlider
-          label="Entertainment"
-          value={entertainment}
-          onValueChange={setEntertainment}
-          min={0}
-          max={500}
-          step={10}
-        />
-      </View>
-
-      <View style={styles.budgetCard}>
-        <Text style={styles.sectionHeaderNoMargin}>Savings</Text>
-        <ExpenseSlider
-          label="Savings Goal"
-          value={savings}
-          onValueChange={setSavings}
-          min={0}
-          max={2000}
-          step={20}
-        />
-      </View>
-
-      <View style={styles.budgetCard}>
-        <Text style={styles.sectionHeaderNoMargin}>Remaining</Text>
-        <Text
-          style={[
-            styles.remainingText,
-            { color: remaining >= 0 ? '#89A488' : '#CC0000' },
-          ]}
+    return (
+        <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={[
+                styles.budgetContainerContent,
+                { paddingTop: insets.top + 10 },
+            ]}
         >
-          {remaining >= 0
-            ? `Great! You have money left.`
-            : `Warning! You've overspent.`}
-        </Text>
-        <Text
-          style={[
-            styles.remainingAmount,
-            { color: remaining >= 0 ? '#89A488' : '#CC0000' },
-          ]}
-        >
-          ${remaining}
-        </Text>
-      </View>
-      <StatusBar style="auto" />
-    </ScrollView>
-  );
+            <View style={{ marginBottom: 20 }}>
+                <Text style={styles.mainTitle}>Build Your Budget</Text>
+                <Text style={styles.subtitle}>
+                    Create a personalized monthly budget based on your income and expenses.
+                </Text>
+            </View>
+
+            <View style={styles.budgetCard}>
+                <Text style={styles.sectionHeaderNoMargin}>Monthly Income</Text>
+                <TextInput
+                    style={styles.incomeInput}
+                    value={`$${income}`}
+                    onChangeText={(text) => {
+                        const num = Number(text.replace(/[^0-9]/g, ''));
+                        setIncome(isNaN(num) ? 0 : num);
+                    }}
+                    keyboardType="numeric"
+                    placeholder="$0"
+                    maxLength={7}
+                />
+            </View>
+
+            <View style={styles.budgetCard}>
+                <Text style={styles.sectionHeaderNoMargin}>Fixed Expenses</Text>
+                <ExpenseSlider
+                    label="Rent"
+                    value={rent}
+                    onValueChange={setRent}
+                    min={0}
+                    max={3000}
+                    step={50}
+                />
+                <ExpenseSlider
+                    label="Transportation"
+                    value={transport}
+                    onValueChange={setTransport}
+                    min={0}
+                    max={500}
+                    step={10}
+                />
+            </View>
+
+            <View style={styles.budgetCard}>
+                <Text style={styles.sectionHeaderNoMargin}>Variable Expenses</Text>
+                <ExpenseSlider
+                    label="Groceries"
+                    value={groceries}
+                    onValueChange={setGroceries}
+                    min={0}
+                    max={1500}
+                    step={20}
+                />
+                <ExpenseSlider
+                    label="Entertainment"
+                    value={entertainment}
+                    onValueChange={setEntertainment}
+                    min={0}
+                    max={500}
+                    step={10}
+                />
+            </View>
+
+            <View style={styles.budgetCard}>
+                <Text style={styles.sectionHeaderNoMargin}>Savings</Text>
+                <ExpenseSlider
+                    label="Savings Goal"
+                    value={savings}
+                    onValueChange={setSavings}
+                    min={0}
+                    max={2000}
+                    step={20}
+                />
+            </View>
+
+            <View style={styles.budgetCard}>
+                <Text style={styles.sectionHeaderNoMargin}>Remaining</Text>
+                <Text
+                    style={[
+                        styles.remainingText,
+                        { color: remaining >= 0 ? '#89A488' : '#CC0000' },
+                    ]}
+                >
+                    {remaining >= 0
+                        ? `Great! You have money left.`
+                        : `Warning! You've overspent.`}
+                </Text>
+                <Text
+                    style={[
+                        styles.remainingAmount,
+                        { color: remaining >= 0 ? '#89A488' : '#CC0000' },
+                    ]}
+                >
+                    ${remaining}
+                </Text>
+            </View>
+            <StatusBar style="auto" />
+        </ScrollView>
+    );
 };
 
 //
