@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -339,6 +339,11 @@ const GoalSettingScreen = ({ route }) => {
     { id: 2, title: 'Set up automatic monthly transfer', done: false },
   ]);
   const [newGoal, setNewGoal] = useState('');
+  const [error, setError] = useState('');
+  
+  const [lastAddedGoal, setLastAddedGoal] = useState(null); 
+  const [showUndo, setShowUndo] = useState(false);         
+  const timeoutRef = useRef(null);                       
 
   const toggleGoal = (id) => {
     setGoals((prev) =>
@@ -346,12 +351,49 @@ const GoalSettingScreen = ({ route }) => {
     );
   };
 
+  const undoAddGoal = () => {
+    if (lastAddedGoal) {
+      setGoals((prev) => prev.filter(g => g.id !== lastAddedGoal.id));
+      clearTimeout(timeoutRef.current);
+      setShowUndo(false);
+      setLastAddedGoal(null);
+    }
+  };
+
   const addGoal = () => {
     const trimmed = newGoal.trim();
-    if (!trimmed) return;
-    setGoals((prev) => [...prev, { id: Date.now(), title: trimmed, done: false }]);
+    if (!trimmed) {
+      setError('Goal cannot be empty. Please enter a goal.');
+      return;
+    }
+
+    clearTimeout(timeoutRef.current);
+    const newGoalObject = { id: Date.now(), title: trimmed, done: false };
+    setGoals((prev) => [...prev, newGoalObject]);
+    setLastAddedGoal(newGoalObject);
+    setShowUndo(true);
+
+ 
+    timeoutRef.current = setTimeout(() => {
+      setShowUndo(false);
+      setLastAddedGoal(null);
+    }, 30000);
+    setError('');
     setNewGoal('');
   };
+
+  const handleNewGoalChange = (text) => {
+    setNewGoal(text);
+    if (error) {
+      setError('');
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   return (
     <ScrollView
@@ -392,15 +434,29 @@ const GoalSettingScreen = ({ route }) => {
 
         <View style={styles.addRow}>
           <TextInput
-            style={styles.addInput}
+            style={[styles.addInput, error && styles.inputError]}
             placeholder="New goal (e.g. Pay off card by May)"
             value={newGoal}
-            onChangeText={setNewGoal}
+            onChangeText={handleNewGoalChange}
           />
           <TouchableOpacity style={styles.addButton} onPress={addGoal}>
             <Text style={styles.addButtonText}>Add</Text>
           </TouchableOpacity>
         </View>
+
+        {error ? (
+          <Text style={styles.errorMessage}>{error}</Text>
+        ) : null}
+
+        {showUndo && lastAddedGoal ? (
+          <View style={styles.undoContainer}>
+            <Text style={styles.undoMessage}>Added: {lastAddedGoal.title}</Text>
+            <TouchableOpacity style={styles.undoButton} onPress={undoAddGoal}>
+              <Text style={styles.undoButtonText}>Undo</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <Text style={styles.smallMuted}>
           Keep goals specific and time-bound so they’re easier to track.
         </Text>
@@ -410,7 +466,6 @@ const GoalSettingScreen = ({ route }) => {
     </ScrollView>
   );
 };
-
 //
 // ==== Roadmap detail screens (now showing action buttons) ====
 //
@@ -806,11 +861,13 @@ const BudgetScreen = () => {
 
 const RoadmapScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const [goal, setGoal] = useState('100');
+
   const contentPages = [
-    { name: 'Starting College', key: 'StartingCollege', icon: 'ios-school' },
-    { name: 'First Job', key: 'FirstJob', icon: 'ios-briefcase' },
-    { name: 'Moving Out', key: 'MovingOut', icon: 'ios-home' },
-    { name: 'Paying Off Debt', key: 'PayingOffDebt', icon: 'ios-card' },
+    { name: 'Starting College', key: 'StartingCollege', icon: 'school-outline' },
+    { name: 'First Job', key: 'FirstJob', icon: 'briefcase-outline' },
+    { name: 'Moving Out', key: 'MovingOut', icon: 'home-outline' },
+    { name: 'Paying Off Debt', key: 'PayingOffDebt', icon: 'card-outline' },
   ];
 
   return (
@@ -853,7 +910,16 @@ const RoadmapScreen = ({ navigation }) => {
 
       <View style={styles.savingsGoalBox}>
         <Text style={styles.savingsGoalHeader}>Monthly Savings Goal</Text>
-        <Text style={styles.savingsGoalText}>$100</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.savingsGoalText}>$</Text>
+          <TextInput
+            style={[styles.savingsGoalText, { flex: 1 }]}
+            value={goal}
+            onChangeText={setGoal}
+            keyboardType="numeric"
+            placeholder="0"
+          />
+        </View>
       </View>
 
       <StatusBar style="auto" />
@@ -1061,7 +1127,7 @@ function HomeStackScreen() {
       <HomeStack.Screen
         name="StartingCollege"
         component={StartingCollegeScreen}
-        options={{ title: 'Starting College Roadmap' }}
+        options={{ headerTitle: 'Starting College Roadmap' }}
       />
 
       <HomeStack.Screen
@@ -1754,4 +1820,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // Error text
+  errorMessage: {
+    color: '#D8000C',
+    fontSize: 13,
+    marginTop: 8,
+    marginBottom: 5,
+    paddingHorizontal: 10,
+    fontWeight: '600',
+  },
+
+  inputError: {
+    borderColor: '#D8000C',
+    borderWidth: 1,
+  },
+
+  addInput: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+
+  // Undo button
+  undoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#89A488',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+},
+undoMessage: {
+    color: '#fff',
+    fontSize: 14,
+    flexShrink: 1,
+    marginRight: 10,
+    fontWeight: 'bold',
+},
+undoButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: '#333',
+},
+undoButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+},
 });
